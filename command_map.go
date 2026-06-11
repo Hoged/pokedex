@@ -2,40 +2,39 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"io"
-	"encoding/json"
+	"errors"
 )
 
-func commandMap(c *config) error {
-	res, err := http.Get(c.next)
+func commandMap(cfg *config) error {
+	locationsResp, err := cfg.pokeapiClient.ListLocations(cfg.nextLocationsURL)
 	if err != nil {
-		return fmt.Errorf("Unable to retrieve locations. Error: %v", err)
+		return err
 	}
 
-	body, err := io.ReadAll(res.Body)
-	defer res.Body.Close()
-	if res.StatusCode > 299 {
-		return fmt.Errorf("Unable to retrieve locations. Error: %v", err)
+	cfg.nextLocationsURL = locationsResp.Next
+	cfg.prevLocationsURL = locationsResp.Previous
+
+	for _, loc := range locationsResp.Results {
+		fmt.Println(loc.Name)
 	}
-
-	if err != nil {
-		return fmt.Errorf("Unable to read the body. Error: %v", err)
-	}
-
-	var mapData jsonMap
-	err = json.Unmarshal(body, &mapData)
-		if err != nil {
-		return fmt.Errorf("Unable to read the body. Error: %v", err)
-	}
-
-	for _, place := range mapData.Results {
-		fmt.Println(place.Name)
-	}
-
-	c.next = mapData.Next
-	c.previous = mapData.Previous
-
 	return nil
+}
 
+func commandMapb(cfg *config) error {
+	if cfg.prevLocationsURL == nil {
+		return errors.New("you're on the first page")
+	}
+
+	locationResp, err := cfg.pokeapiClient.ListLocations(cfg.prevLocationsURL)
+	if err != nil {
+		return err
+	}
+
+	cfg.nextLocationsURL = locationResp.Next
+	cfg.prevLocationsURL = locationResp.Previous
+
+	for _, loc := range locationResp.Results {
+		fmt.Println(loc.Name)
+	}
+	return nil
 }
