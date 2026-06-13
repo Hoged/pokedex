@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-func (c *Client) ListPokemon(pokemon string) (RespPokemon, error) {
-	url := baseURL + "/pokemon/" + pokemon
+func (c *Client) ListArea(area string) (RespAreaInfo, error) {
+	url := baseURL + "/location-area/" + area
 	var data []byte
 
 	val, exists := c.cache.Get(url)
@@ -16,27 +16,27 @@ func (c *Client) ListPokemon(pokemon string) (RespPokemon, error) {
 	} else {
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
-			return RespPokemon{}, err
+			return RespAreaInfo{}, err
 		}
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
-			return RespPokemon{}, err
+			return RespAreaInfo{}, err
 		}
 	defer resp.Body.Close()
 
 	data, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return RespPokemon{}, err
+		return RespAreaInfo{}, err
 	}
 	c.cache.Add(url, data)
 	}
 
-	pokemonResp := RespPokemon{}
-	err := json.Unmarshal(data, &pokemonResp)
+	areaResp := RespAreaInfo{}
+	err := json.Unmarshal(data, &areaResp)
 	if err != nil {
-		return RespPokemon{}, err
+		return RespAreaInfo{}, err
 	}
 
-	return pokemonResp, nil
+	return areaResp, nil
 }
